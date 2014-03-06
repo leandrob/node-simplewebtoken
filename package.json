@@ -1,0 +1,23 @@
+{
+  "name": "simplewebtoken",
+  "version": "0.0.1",
+  "description": "Simple Web Tokens library for Node.js",
+  "main": "./lib/index.js",
+  "dependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leandrob/node-simplewebtoken.git"
+  },
+  "keywords": [
+    "SWT",
+    "Simple web token",
+    "ACS Tokens"
+  ],
+  "scripts": {
+    "test": "mocha -R spec test"
+  },
+  "author": "Leandro Boffi (lboffi@gmail.com)",
+  "license": "MIT",
+  "readmeFilename": "README.md"
+}
