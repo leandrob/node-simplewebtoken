@@ -1,19 +1,32 @@
 var assert = require('assert');
 var swt = require('../lib');
 
-var token = "a-valid-but-expired-token-here";
 var symmetricKey = 'your-symmetric-key';
 var validAudience = 'your-scope';
 
-describe('Parse', function() {
+describe('lib.index.parse', function() {
 	it('Should parse SWT', function(done) {
+
+		var userInfo = {
+			name: 'Leandro',
+			age: 27
+		};
+
+		var options = {
+			key: symmetricKey,
+			audience: 'http://nice-audience.com/',
+			expiresInMinutes: 60,
+			issuer: 'http://issuer.com/'
+		};
+
+		var token = swt.sign(userInfo, options);
+
 		var profile = swt.parse(token);
 
 		assert.ok(profile);
 		assert.ok(profile.claims);
-		assert.equal('kidozen.com', profile.claims['http://schemas.kidozen.com/domain'])
-		assert.equal('http://tasks.armonia.kidocloud.com/', profile.audience);
-		assert.ok(new Date(1394058708 * 1000).toString(), profile.expiresOn.toString());
+		assert.equal('Leandro', profile.claims.name)
+		assert.equal('http://nice-audience.com/', profile.audience);
 
 		done();
 	});
@@ -26,7 +39,7 @@ describe('Parse', function() {
 	});
 })
 
-describe('Validate', function () {
+describe('lib.index.validate', function () {
 	it('Should fail with invalid token format', function(done) {
 		swt.validate('adjdaksjd', { key: symmetricKey, bypassExpiration: true }, function(err, profile) {
 			assert.ok(err);
@@ -37,6 +50,21 @@ describe('Validate', function () {
 	})
 
 	it('Should fail with expired token', function(done) {
+
+		var userInfo = {
+			name: 'Leandro',
+			age: 27
+		};
+
+		var options = {
+			key: symmetricKey,
+			audience: 'http://nice-audience.com/',
+			expiresInMinutes: -1,
+			issuer: 'http://issuer.com/'
+		};
+
+		var token = swt.sign(userInfo, options);
+
 		swt.validate(token, { key: symmetricKey }, function(err, profile) {
 			assert.ok(err);
 			assert.ok(!profile);
@@ -46,7 +74,22 @@ describe('Validate', function () {
 	});
 
 	it('Should fail with invalid audience', function(done) {
-		swt.validate(token, { key: symmetricKey, bypassExpiration: true, audience: 'http://anyother.com/' }, function(err, profile) {
+
+		var userInfo = {
+			name: 'Leandro',
+			age: 27
+		};
+
+		var options = {
+			key: symmetricKey,
+			audience: 'http://nice-audience.com/',
+			expiresInMinutes: 1,
+			issuer: 'http://issuer.com/'
+		};
+
+		var token = swt.sign(userInfo, options);
+
+		swt.validate(token, { key: symmetricKey, audience: 'http://anyother.com/' }, function(err, profile) {
 			assert.ok(err);
 			assert.ok(!profile);
 			assert.equal('Invalid audience.', err.message);
@@ -56,9 +99,23 @@ describe('Validate', function () {
 
 	it('Should fail with invalid signature', function(done) {
 
-		var hackedToken = token.replace('armonia%40kidozen.com', 'lean%40kidozen.com');
+		var userInfo = {
+			name: 'Leandro',
+			age: 27
+		};
 
-		swt.validate(hackedToken, { key: symmetricKey, bypassExpiration: true }, function(err, profile) {
+		var options = {
+			key: symmetricKey,
+			audience: 'http://nice-audience.com/',
+			expiresInMinutes: 1,
+			issuer: 'http://issuer.com/'
+		};
+
+		var token = swt.sign(userInfo, options);
+
+		var hackedToken = token.replace('Leandro', 'John');
+
+		swt.validate(hackedToken, { key: symmetricKey }, function(err, profile) {
 			assert.ok(err);
 			assert.ok(!profile);
 			assert.equal('Invalid signature.', err.message);
@@ -67,7 +124,22 @@ describe('Validate', function () {
 	});
 
 	it('Should validate SWT', function(done) {
-		swt.validate(token, { key: symmetricKey, bypassExpiration: true }, function(err, profile) {
+
+		var userInfo = {
+			name: 'Leandro',
+			age: 27
+		};
+
+		var options = {
+			key: symmetricKey,
+			audience: 'http://nice-audience.com/',
+			expiresInMinutes: 1,
+			issuer: 'http://issuer.com/'
+		};
+
+		var token = swt.sign(userInfo, options);
+
+		swt.validate(token, { key: symmetricKey }, function(err, profile) {
 			assert.ifError(err);
 
 			assert.ok(profile.claims);
@@ -76,17 +148,7 @@ describe('Validate', function () {
 	})
 
 	it('Should validate SWT with audience', function(done) {
-		swt.validate(token, { key: symmetricKey, bypassExpiration: true, audience: validAudience }, function(err, profile) {
-			assert.ifError(err);
 
-			assert.ok(profile.claims);
-			done();
-		})
-	})
-})
-
-describe('Sign', function () {
-	it('Should sign a SWT', function (done) {
 		var userInfo = {
 			name: 'Leandro',
 			age: 27
@@ -99,6 +161,31 @@ describe('Sign', function () {
 			issuer: 'http://issuer.com/'
 		};
 
+		var token = swt.sign(userInfo, options);
+
+		swt.validate(token, { key: symmetricKey, audience: 'http://nice-audience.com/' }, function(err, profile) {
+			assert.ifError(err);
+
+			assert.ok(profile.claims);
+			done();
+		})
+	})
+})
+
+describe('lib.index.sign', function () {
+	it('Should sign a JWT', function (done) {
+		var userInfo = {
+			name: 'Leandro',
+			age: 27
+		};
+
+		var options = {
+			key: symmetricKey,
+			audience: 'http://nice-audience.com/',
+			expiresInMinutes: 61,
+			issuer: 'http://issuer.com/'
+		};
+
 		var rawToken = swt.sign(userInfo, options);
 
 		swt.validate(rawToken, { key: symmetricKey, audience: 'http://nice-audience.com/' }, function(err, profile) {
@@ -107,6 +194,11 @@ describe('Sign', function () {
 			assert.ok(profile.claims);
 			assert.equal('Leandro', profile.claims.name)
 			assert.equal(27, profile.claims.age);
+
+			var hourLater = new Date();
+			hourLater.setMinutes(hourLater.getMinutes() + 60);
+
+			assert.ok(hourLater < profile.expiresOn);
 
 			done();
 		})
